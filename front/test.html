@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Gacha API Tester</title>
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 40px auto; padding: 0 20px; background: #f5f5f5; }
+    h2 { margin-bottom: 20px; }
+    label { display: block; margin-top: 14px; font-size: 13px; font-weight: bold; color: #444; }
+    select, input { width: 100%; padding: 8px 10px; margin-top: 4px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; box-sizing: border-box; }
+    .checkbox-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+    .checkbox-row input { width: auto; }
+    .checkbox-row label { margin: 0; }
+    button { margin-top: 20px; width: 100%; padding: 12px; background: #2a6ef5; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
+    button:hover { background: #1a5ce0; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+    #result { margin-top: 20px; background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; font-size: 14px; white-space: pre; display: none; }
+    #error { margin-top: 16px; background: #fdecea; color: #c0392b; padding: 12px; border-radius: 8px; font-size: 13px; display: none; }
+    .field { background: #e8f4e8; color: #2d6a2d; }  /* highlight fields in result */
+  </style>
+</head>
+<body>
+
+  <h2>Gacha API Tester</h2>
+
+  <label for="game">Game</label>
+  <select id="game">
+    <option value="genshin">Genshin Impact</option>
+    <option value="hsr">Honkai: Star Rail</option>
+    <option value="zzz">Zenless Zone Zero</option>
+  </select>
+
+  <label for="pity">Current Pity (0–89)</label>
+  <input type="number" id="pity" value="0" min="0" max="89">
+
+  <label for="pulls">Pulls Available</label>
+  <input type="number" id="pulls" value="90" min="1" max="2000">
+
+  <label for="copies">Copies Wanted (1–7)</label>
+  <input type="number" id="copies" value="1" min="1" max="7">
+
+  <div class="checkbox-row">
+    <input type="checkbox" id="guaranteed">
+    <label for="guaranteed">Guaranteed (lost last 50/50?)</label>
+  </div>
+
+  <button id="btn" onclick="calculate()">Send Request</button>
+
+  <div id="error"></div>
+  <div id="result"></div>
+
+  <script>
+    async function calculate() {
+      const btn = document.getElementById("btn");
+      const resultEl = document.getElementById("result");
+      const errorEl = document.getElementById("error");
+
+      // Read inputs
+      const payload = {
+        game:       document.getElementById("game").value,
+        pity:       parseInt(document.getElementById("pity").value),
+        pulls:      parseInt(document.getElementById("pulls").value),
+        copies:     parseInt(document.getElementById("copies").value),
+        guaranteed: document.getElementById("guaranteed").checked,
+      };
+
+      // Reset UI
+      btn.disabled = true;
+      btn.textContent = "Calculating…";
+      resultEl.style.display = "none";
+      errorEl.style.display = "none";
+
+      try {
+        const response = await fetch("http://localhost:8000/api/calculate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(JSON.stringify(err.detail, null, 2));
+        }
+
+        const data = await response.json();
+
+        // Show the request and response side by side
+        resultEl.textContent =
+          "── Request sent ──────────────────\n" +
+          JSON.stringify(payload, null, 2) +
+          "\n\n── Response from FastAPI ──────────\n" +
+          JSON.stringify(data, null, 2) +
+          "\n\n── Readable ───────────────────────\n" +
+          `Probability:      ${(data.probability * 100).toFixed(1)}%\n` +
+          `Expected pulls:   ~${data.expected_pulls}\n` +
+          `Currency cost:    ${data.currency_cost.toLocaleString()}\n` +
+          `Pulls to pity:    ${data.pulls_to_hard_pity}`;
+
+        resultEl.style.display = "block";
+
+      } catch (err) {
+        errorEl.textContent = "⚠ Error: " + err.message +
+          "\n\nMake sure uvicorn is running: uvicorn main:app --reload";
+        errorEl.style.display = "block";
+      }
+
+      btn.disabled = false;
+      btn.textContent = "Send Request";
+    }
+  </script>
+
+</body>
+</html>
