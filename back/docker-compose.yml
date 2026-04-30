@@ -1,0 +1,22 @@
+services:
+
+  db:
+    image: postgres:15
+    container_name: gacha-postgres
+    env_file: .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  api:
+    build: .
+    container_name: gacha-api
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      - db
+    restart: always
+
+volumes:
+  postgres_data:

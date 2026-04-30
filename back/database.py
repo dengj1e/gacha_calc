@@ -2,16 +2,18 @@
 connect to our postgresql
 """
 
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
-DATABASE_URL = "postgresql://gacha:yourpassword@localhost:5432/gacha_db"
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
 class Base(DeclarativeBase):
     pass
+
 
 def get_db():
     db = SessionLocal()
