@@ -27,16 +27,6 @@ PRESETS: list[BannerPreset] = [
         use_pity=True,
     ),
     BannerPreset(
-        id="wuwa",
-        name="Featured Resonator Convene",
-        game="Wuthering Waves",
-        base_rate=0.008,
-        soft_pity=66,
-        hard_pity=80,
-        rate_increase=0.06,
-        use_pity=True,
-    ),
-    BannerPreset(
         id="zzz",
         name="Exclusive Channel",
         game="Zenless Zone Zero",
